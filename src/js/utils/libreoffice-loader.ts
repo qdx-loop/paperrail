@@ -88,7 +88,7 @@ export class LibreOfficeConverter {
   private basePath: string;
 
   constructor(basePath?: string) {
-    this.basePath = basePath || LIBREOFFICE_CDN_PATH;
+    this.basePath = basePath || LIBREOFFICE_LOCAL_PATH;
   }
 
   async initialize(onProgress?: ProgressCallback): Promise<void> {

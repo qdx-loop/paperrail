@@ -126,7 +126,15 @@ const init = async () => {
       });
 
       const brandName = __BRAND_NAME__ || 'BentoPDF';
-      document.title = `${brandName} - ${t('simpleMode.title')}`;
+      // Only replace a generic upstream title. Deployment-specific titles
+      // (per-tool SEO titles, the branded homepage title) must survive at
+      // runtime, otherwise every page ends up with the same <title>.
+      // Note: keep the upstream brand name as a regex so post-build
+      // re-branding passes do not rewrite this comparison string.
+      const currentTitle = document.title.trim();
+      if (!currentTitle || /^PDF Tools$/i.test(currentTitle) || /Bento\s?PDF/i.test(currentTitle)) {
+        document.title = `${brandName} - ${t('simpleMode.title')}`;
+      }
 
       const toolsHeader = document.getElementById('tools-header');
       if (toolsHeader) {

@@ -43,9 +43,16 @@ function sendTrustedHostsToSw(target: ServiceWorker | null | undefined) {
   target.postMessage({ type: 'SET_TRUSTED_CDN_HOSTS', hosts });
 }
 
+// PaperRail: a cache-first SW pinned to a stale hashed bundle set after every
+// deploy (assets are immutable and removed on release). Offline support is not
+// a requirement for this deployment, so registration is opt-in at build time.
+const swEnabled = import.meta.env.VITE_ENABLE_SW === 'true';
+
 if (isDevelopment) {
   console.log('[Dev Mode] Service Worker registration skipped in development');
   console.log('Service Worker will be active in production builds');
+} else if (!swEnabled) {
+  console.log('[SW] Service Worker disabled for this deployment');
 } else if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const swPath = `${import.meta.env.BASE_URL}sw.js`;

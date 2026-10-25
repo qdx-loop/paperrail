@@ -5,7 +5,7 @@ import enCommon from '../../../public/locales/en/common.json';
 import enTools from '../../../public/locales/en/tools.json';
 
 // Supported languages
-export const supportedLanguages = [
+const ALL_LANGUAGES = [
   'en',
   'ar',
   'be',
@@ -31,7 +31,22 @@ export const supportedLanguages = [
   'ca',
   'fa',
 ] as const;
-export type SupportedLanguage = (typeof supportedLanguages)[number];
+
+export type SupportedLanguage = (typeof ALL_LANGUAGES)[number];
+
+// PaperRail: localized landing pages are generated separately; until they are
+// part of the deployment we expose only the languages that actually exist.
+// Restrict at build time with VITE_LANGUAGES=en (comma separated).
+const configuredLanguages: string = import.meta.env.VITE_LANGUAGES ?? '';
+const requestedLanguages = configuredLanguages
+  .split(',')
+  .map((lang: string) => lang.trim())
+  .filter((lang: string): lang is SupportedLanguage =>
+    (ALL_LANGUAGES as readonly string[]).includes(lang)
+  );
+
+export const supportedLanguages: readonly SupportedLanguage[] =
+  requestedLanguages.length > 0 ? requestedLanguages : ALL_LANGUAGES;
 
 export const languageNames: Record<SupportedLanguage, string> = {
   en: 'English',

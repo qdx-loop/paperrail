@@ -1,0 +1,18 @@
+:root{
+  --pf-blue:#1181f5; --pf-dark:#0b5ec7; --pf-ink:#123; --pf-muted:#5a7184; --pf-bg:#f6f9fc;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","PingFang SC","Microsoft YaHei",sans-serif;color:var(--pf-ink);background:var(--pf-bg);line-height:1.65}
+.pf-header{position:sticky;top:0;z-index:9;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-bottom:1px solid #e3ecf3;padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+.pf-header a{display:flex;gap:10px;align-items:center;color:var(--pf-dark);font-weight:700;text-decoration:none;font-size:18px}
+.pf-main{max-width:860px;margin:28px auto;padding:0 20px}
+h1,h2{line-height:1.25}
+h1{font-size:1.9rem}
+h2{margin-top:1.6em}
+a{color:var(--pf-dark)}
+.pf-footer{max-width:860px;margin:40px auto;padding:18px 20px;color:var(--pf-muted);font-size:.9rem;border-top:1px solid #e3ecf3}
+.pf-cta{display:inline-block;background:var(--pf-blue);color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700}
+.pf-cta:hover{background:var(--pf-dark)}
+ul{padding-left:1.2rem}
+li{margin:.35em 0}
+.pf-hint{background:#fff;border:1px dashed #cfe0f0;border-radius:10px;padding:10px 14px;color:var(--pf-muted);font-size:.95rem}

@@ -1,0 +1,92 @@
+/* PaperRail static pages (about, privacy, guides) */
+:root {
+  --pf-bg: #0b0f14;
+  --pf-panel: #111827;
+  --pf-text: #e5e7eb;
+  --pf-muted: #9ca3af;
+  --pf-accent: #818cf8;
+  --pf-border: #1f2937;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--pf-bg);
+  color: var(--pf-text);
+  font: 16px/1.7 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+a { color: var(--pf-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.pf-header {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--pf-border);
+  background: rgba(11, 15, 20, .9);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+.pf-header > a { display: flex; align-items: center; gap: .65rem; color: #fff; }
+.pf-header img { width: 36px; height: 36px; border-radius: 8px; }
+.pf-header nav { margin-left: auto; }
+.pf-header nav a { color: var(--pf-muted); }
+.pf-header nav a:hover { color: var(--pf-text); text-decoration: none; }
+@media (max-width: 560px) {
+  .pf-header { flex-wrap: wrap; }
+  .pf-header nav { width: 100%; margin-left: 0; padding-top: .35rem; }
+}
+.pf-header span { font-weight: 700; font-size: 1.15rem; color: #fff; letter-spacing: -.01em; }
+.pf-main {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2.25rem 1.25rem 3rem;
+}
+.pf-main h1 {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  line-height: 1.2;
+  margin: 0 0 1rem;
+  color: #fff;
+  letter-spacing: -.02em;
+}
+.pf-main h2 {
+  font-size: 1.3rem;
+  margin: 2rem 0 .6rem;
+  color: #fff;
+}
+.pf-main p, .pf-main li { color: #d1d5db; }
+.pf-main ul, .pf-main ol { padding-left: 1.3rem; }
+.pf-main li { margin: .35rem 0; }
+.pf-main strong { color: #fff; }
+.pf-main code {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: .1rem .35rem;
+  font-size: .9em;
+}
+.pf-hint {
+  background: var(--pf-panel);
+  border: 1px solid var(--pf-border);
+  border-left: 3px solid var(--pf-accent);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  margin: 1.25rem 0;
+  color: #cbd5e1;
+}
+.pf-hint p { margin: 0; }
+.pf-footer {
+  border-top: 1px solid var(--pf-border);
+  margin-top: 3rem;
+  padding: 1.5rem 1.25rem 2.5rem;
+  text-align: center;
+  color: var(--pf-muted);
+  font-size: .9rem;
+}
+.pf-footer a { color: var(--pf-muted); }
+.pf-footer a:hover { color: var(--pf-text); }
+@media (max-width: 480px) {
+  .pf-main { padding: 1.5rem 1rem 2rem; }
+}

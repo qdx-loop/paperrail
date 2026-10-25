@@ -8,29 +8,38 @@ published under **AGPL-3.0-only** in accordance with that license.
 ## Modifications made in this fork
 
 1. `src/js/utils/libreoffice-loader.ts`
-   - Default engine root changed from `BASE_URL + libreoffice-wasm/` to a
-     cross-origin worker URL (`https://paperrail-libs.qdx19qdx-324.workers.dev/libreoffice-wasm/`),
-     because Cloudflare Pages enforces a 25MiB per-file static limit and the
-     LibreOffice WASM engine (soffice.wasm.gz ≈ 47 MB) cannot be uploaded as a
-     single static file. *(Note: at deploy time of this build, the engine files
-     are additionally served as `.p0`, `.p1`, … split archives within the same
-     Pages root; `fetchAsDecompressedUrl` transparently fetches, concatenates
-     and gunzips the parts client-side.)*
-   - `fetchAsDecompressedUrl` now prefers part URLs (`<file>.p0`, `.p1`, …),
-     concatenates them into one Blob, and applies the existing gzip
-     DecompressionStream path.
+   - Default engine root kept local (`BASE_URL + libreoffice-wasm/`). Cloudflare
+     Pages rejects files above 25 MiB, so the LibreOffice WASM engine
+     (`soffice.wasm.gz` ≈ 47 MB, `soffice.data.gz` ≈ 28 MB) is deployed as
+     `.p0`, `.p1`, … parts inside the same Pages root.
+   - `fetchAsDecompressedUrl` prefers part URLs, concatenates them into one
+     Blob, and applies the existing gzip DecompressionStream path.
    - `initialize()` now also fetches `soffice.js`, `soffice.worker.js` and
      `browser.worker.global.js` with CORS and mints blob: URLs for them, so the
      strict Content-Security-Policy (`worker-src 'self' blob:`) of the static
      deployment is honoured.
 
-2. `vite.config.ts` — NOT modified; branding is applied entirely through
-   build-time environment variables provided by the project:
+2. Branding is applied through the project's own build-time variables:
    `SIMPLE_MODE=true`, `SITE_URL=https://paperrail.pages.dev`,
    `VITE_BRAND_NAME=PaperRail`, `VITE_BRAND_LOGO=assets/brand/logo.svg`,
-   `VITE_FOOTER_TEXT=…`, `VITE_USE_CDN=true`.
+   `VITE_FOOTER_TEXT=…`, `VITE_USE_CDN=true`, plus two PaperRail additions:
+   `VITE_LANGUAGES=en` and `VITE_ENABLE_SW` (unset = disabled).
 
-3. `brand/pages/` — new static pages deployed alongside the app:
+3. Runtime behaviour changes (small, surgical):
+   - `src/js/main.ts` (SIMPLE_MODE block): the runtime `<title>` override now
+     only fires when the document still carries a generic upstream title, so
+     the per-tool SEO titles and the branded homepage title survive.
+   - `src/js/i18n/i18n.ts`: supported languages can be restricted with
+     `VITE_LANGUAGES`. PaperRail ships English only, because localized landing
+     pages are not generated in this deployment; exposing the switcher without
+     those pages produced `/zh/...` 404 links.
+   - `src/js/sw-register.ts` + `public/sw.js`: the service worker is disabled
+     unless `VITE_ENABLE_SW=true`. The upstream cache-first worker pinned
+     hashed bundles across releases (mixed old/new `main-*.js` after a deploy,
+     which broke grid rendering). The deployed `sw.js` is a kill switch that
+     clears caches, unregisters itself and reloads controlled clients once.
+
+4. `branding/pages/` — new static pages deployed alongside the app:
    - `about.html`, `privacy.html` (privacy policy, analytics description)
    - `guides/compress-pdf-to-100kb.html`, `guides/heic-to-pdf.html`,
      `guides/merge-pdf-no-upload.html` — SEO/how-to landing content
@@ -40,8 +49,8 @@ published under **AGPL-3.0-only** in accordance with that license.
    - `assets/brand/{logo.svg,og.png,favicon.ico}` + regenerated favicon set in
      `images/` — own brand artwork (see brand/README if present)
 
-4. `scripts/postprocess.mjs` (in this fork's tooling, also at
-   `/tmp/opencode/postprocess.mjs`)
+5. `scripts/postprocess.mjs` — run after `vite build` (`PAPERRAIL_SRC`,
+   `PAPERRAIL_DIST`, `PAPERRAIL_BRAND` override the defaults):
    - Strips stale pre-compressed `.br/.gz` duplicates after content rewrites
      (Cloudflare Pages re-compresses at the edge).
    - Batch-rewrites `https://www.bentopdf.com` → `https://paperrail.pages.dev`
