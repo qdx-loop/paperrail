@@ -103,7 +103,43 @@ npx wrangler pages deploy dist --project-name paperrail --branch main
   清空旧缓存、注销自身、刷新一次受控页面。旧版 cache-first SW 曾把旧 HTML 与哈希资源混用，
   导致工具网格偶发空白；不要重新打开，除非改成按版本失效的策略。
 
-## 六、已知限制与风险
+## 六、SEO 与搜索引擎收录
+
+已内置的技术 SEO：
+
+- 每页唯一 title/description（工具页含本地化标题），canonical 自指且只有一条。
+- 24 种语言 + x-default 的 hreflang 互指，`/zh/…`、`/ja/…` 均有独立 URL。
+- `sitemap.xml` 3361 条（工具页 + 本地化页 + about/privacy/guides），`robots.txt` 声明 sitemap。
+- JSON-LD：首页 Organization、工具页 SoftwareApplication + HowTo + BreadcrumbList、
+  guides 为 Article + BreadcrumbList、about 为 AboutPage。
+- Open Graph / Twitter Card（og.png 1200×630）、favicon 全套、404 返回真 404、
+  `.html` 自动 308 到无扩展名 URL、http→https 301、HSTS 一年。
+- `robots.txt` 只屏蔽 `/locales/`、`/libreoffice-wasm/`、`*.wasm`；
+  **不要屏蔽 `/assets/`**，JS/CSS 都在里面，屏蔽后 Google 无法渲染页面。
+- pages.dev 与自定义域内容相同，canonical 统一指向 `https://qdxil.qzz.io`。
+
+主动推送收录（无需账号）：IndexNow，key 文件是站点根目录的
+`9f3c1d9a7b2e4f6a9c0d1e2f3a4b5c6d.txt`，重新推送：
+
+```bash
+curl -s https://qdxil.qzz.io/sitemap.xml -o /tmp/sitemap.xml
+node -e "const fs=require('fs');const u=[...fs.readFileSync('/tmp/sitemap.xml','utf8').matchAll(/<loc>([^<]*)<\/loc>/g)].map(m=>m[1]);fs.writeFileSync('/tmp/indexnow.json',JSON.stringify({host:'qdxil.qzz.io',key:'9f3c1d9a7b2e4f6a9c0d1e2f3a4b5c6d',keyLocation:'https://qdxil.qzz.io/9f3c1d9a7b2e4f6a9c0d1e2f3a4b5c6d.txt',urlList:u}))"
+curl -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json' --data-binary @/tmp/indexnow.json -w '%{http_code}'
+```
+
+返回 200/202 即已接收（会同步给 Bing、Yandex、Naver、Seznam）。Google 不参与 IndexNow，
+需要在 Search Console 手动提交一次：
+
+1. https://search.google.com/search-console → 添加资源 → **域名** → `qdxil.qzz.io`。
+2. 按提示在 Cloudflare DNS 加一条 TXT（或选用 HTML 文件验证，把文件放进
+   `/tmp/opencode/brand/pages/` 后重新 postprocess + deploy）。
+3. 验证通过后 → Sitemaps → 提交 `https://qdxil.qzz.io/sitemap.xml`。
+4. URL 检查 → 首页与 merge-pdf / compress-pdf / heic-to-pdf 各点一次「请求编入索引」。
+
+预期：新域名无外链，Bing 约 3–7 天开始出现，Google 通常 1–3 周；先用
+`site:qdxil.qzz.io` 自查。想加速就补外链（GitHub README、产品目录、相关论坛回答）。
+
+## 七、已知限制与风险
 
 - DNS：CNAME 未添加前 `qdxil.qzz.io` 无法访问（curl 000 / DNS 无记录），
   Pages 侧状态为 `pending / CNAME record not set`。
@@ -115,7 +151,7 @@ npx wrangler pages deploy dist --project-name paperrail --branch main
 - 全部工具的结果都在浏览器内存中生成，超大 PDF（>200MB）受设备内存限制。
 - R2 未开通（error 10042），所以大文件走分片而不是对象存储；日后开通可简化加载逻辑。
 
-## 七、下一步运营建议
+## 八、下一步运营建议
 
 1. 加完 CNAME 后在 Search Console 提交新 sitemap，观察 `/zh/`、`/ja/` 的收录。
 2. 内容：围绕「no upload / private PDF」长尾词，每周加 1 篇 guide，内链到对应工具页。

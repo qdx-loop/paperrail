@@ -148,6 +148,100 @@ for (const lang of fs.readdirSync(DIST)) {
   }
 }
 
+// 2c) SEO hygiene: one canonical per URL, absolute social images, structured
+// data on the hand-authored pages, and the IndexNow key file.
+const INDEXNOW_KEY = '9f3c1d9a7b2e4f6a9c0d1e2f3a4b5c6d';
+fs.writeFileSync(path.join(DIST, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY);
+const ldSafe = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
+(function seoHygiene(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      if (['assets', 'images', 'locales', 'libreoffice-wasm'].includes(e.name)) continue;
+      seoHygiene(p);
+      continue;
+    }
+    if (!e.name.endsWith('.html')) continue;
+    let s = fs.readFileSync(p, 'utf8');
+    const o = s;
+
+    // The i18n generator appends a second canonical to the English home page.
+    const canons = [...s.matchAll(/[ \t]*<link rel="canonical"[^>]*>[ \t]*\n?/g)];
+    if (canons.length > 1) {
+      for (const m of canons.slice(1)) s = s.split(m[0]).join('');
+      if (path.relative(DIST, p) === 'index.html') {
+        s = s.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${SITE}/$2`);
+      }
+    }
+
+    const rel = path.relative(DIST, p).split(path.sep).join('/');
+    const authored =
+      rel === 'about.html' || rel === 'privacy.html' || rel.startsWith('guides/');
+    if (authored) {
+      s = s.replace(/content="\/assets\/brand\/og\.png"/g, `content="${OG}"`);
+      const canonical = (s.match(/rel="canonical" href="([^"]*)"/) || [])[1] || SITE;
+      const title = (s.match(/<title>([^<]*)<\/title>/) || [])[1] || 'PaperRail';
+      const desc = (s.match(/name="description" content="([^"]*)"/) || [])[1] || '';
+      const h1 = (s.match(/<h1>([^<]*)<\/h1>/) || [])[1] || title;
+      const extra = [];
+      if (!/property="og:image"/.test(s)) extra.push(`<meta property="og:image" content="${OG}">`);
+      if (!/property="og:url"/.test(s)) extra.push(`<meta property="og:url" content="${canonical}">`);
+      if (!/name="twitter:card"/.test(s)) extra.push('<meta name="twitter:card" content="summary_large_image">');
+      if (!/name="twitter:image"/.test(s)) extra.push(`<meta name="twitter:image" content="${OG}">`);
+      if (extra.length) s = s.replace(/<\/head>/, `${extra.join('\n')}\n</head>`);
+
+      if (!/application\/ld\+json/.test(s)) {
+        const type =
+          rel === 'about.html' ? 'AboutPage' : rel === 'privacy.html' ? 'WebPage' : 'Article';
+        const page = {
+          '@type': type,
+          '@id': `${canonical}#page`,
+          url: canonical,
+          name: title,
+          description: desc,
+          isPartOf: { '@type': 'WebSite', name: 'PaperRail', url: `${SITE}/` },
+        };
+        if (type === 'Article') {
+          page.headline = h1;
+          page.image = OG;
+          page.datePublished = '2026-10-25';
+          page.dateModified = '2026-10-25';
+          page.author = { '@type': 'Organization', name: 'PaperRail', url: `${SITE}/about` };
+          page.publisher = {
+            '@type': 'Organization',
+            name: 'PaperRail',
+            logo: { '@type': 'ImageObject', url: `${SITE}/assets/brand/logo.svg` },
+          };
+        }
+        const crumbs = [{ name: 'Home', item: `${SITE}/` }];
+        if (rel.startsWith('guides/')) crumbs.push({ name: 'Guides', item: `${SITE}/guides` });
+        crumbs.push({ name: h1, item: canonical });
+        const ld = {
+          '@context': 'https://schema.org',
+          '@graph': [
+            page,
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: crumbs.map((c, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: c.name,
+                item: c.item,
+              })),
+            },
+          ],
+        };
+        s = s.replace(
+          /<\/head>/,
+          `<script type="application/ld+json">${ldSafe(ld)}</script>\n</head>`
+        );
+      }
+    }
+    if (s !== o) fs.writeFileSync(p, s);
+  }
+})(DIST);
+
 // 3) index.html head + hero (replace whole primary meta block & inject hero)
 const idx = path.join(DIST, 'index.html');
 let h = fs.readFileSync(idx, 'utf8');
@@ -200,6 +294,9 @@ if (exists(hd)) {
   let s = fs.readFileSync(hd, 'utf8');
   const loOrigin = 'https://paperrail-libs.qdx19qdx-324.workers.dev';
   if (!s.includes(loOrigin)) s = s.replace(/connect-src ([^\n]*)/, (m, rest, off, str) => 'connect-src ' + loOrigin + ' ' + (rest.startsWith('blob:') ? loOrigin + ' ' : '') + rest);
+  if (!s.includes('Strict-Transport-Security')) {
+    s = s.trimEnd() + '\n\n/*\n  Strict-Transport-Security: max-age=31536000; includeSubDomains\n';
+  }
   fs.writeFileSync(hd, s);
 }
 
