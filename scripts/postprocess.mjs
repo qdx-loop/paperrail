@@ -126,6 +126,23 @@ for (const lang of fs.readdirSync(DIST)) {
       // directory URL: keep canonical/og:url consistent with the trailing slash
       s = s.split(`rel="canonical" href="${SITE}/${lang}"`).join(`rel="canonical" href="${SITE}/${lang}/"`);
       s = s.split(`property="og:url" content="${SITE}/${lang}"`).join(`property="og:url" content="${SITE}/${lang}/"`);
+      // localized home pages still carry the English "PDF Tools" title; use the
+      // locale's own simpleMode.title so each language has a unique title.
+      try {
+        const common = JSON.parse(
+          fs.readFileSync(path.join(SRC, 'public', 'locales', lang, 'common.json'), 'utf8')
+        );
+        const localized = common?.simpleMode?.title;
+        if (localized) {
+          s = s.replace(/<title>[^<]*<\/title>/, `<title>${localized} - PaperRail</title>`);
+          s = s.replace(
+            /(<meta property="og:title" content=")[^"]*(")/,
+            `$1${localized} - PaperRail$2`
+          );
+        }
+      } catch {
+        /* locale without common.json: keep the English title */
+      }
     }
     if (s !== o) fs.writeFileSync(p, s);
   }
