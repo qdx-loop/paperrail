@@ -51,10 +51,14 @@ export const createLanguageSwitcher = (): HTMLElement => {
   searchWrapper.className =
     'p-2 border-b border-gray-700 bg-gray-800 flex-shrink-0';
 
-  const searchPlaceholder =
-    t('nav.searchLanguage') !== 'nav.searchLanguage'
-      ? t('nav.searchLanguage')
-      : 'Search language…';
+  // t() can be called before i18n finishes initialising (the footer switcher
+  // is created by a standalone module). Fall back instead of printing
+  // "undefined".
+  const translateOr = (key: string, fallback: string): string => {
+    const value = t(key);
+    return value && value !== key && value !== 'undefined' ? value : fallback;
+  };
+  const searchPlaceholder = translateOr('nav.searchLanguage', 'Search language…');
 
   const searchInput = document.createElement('input');
   searchInput.type = 'search';
@@ -76,10 +80,7 @@ export const createLanguageSwitcher = (): HTMLElement => {
 
   const emptyState = document.createElement('p');
   emptyState.className = 'hidden px-4 py-3 text-sm text-gray-400 text-center';
-  const emptyText =
-    t('nav.noLanguagesFound') !== 'nav.noLanguagesFound'
-      ? t('nav.noLanguagesFound')
-      : 'No languages found';
+  const emptyText = translateOr('nav.noLanguagesFound', 'No languages found');
   emptyState.textContent = emptyText;
 
   const options: HTMLButtonElement[] = [];
@@ -164,11 +165,19 @@ export const createLanguageSwitcher = (): HTMLElement => {
 };
 
 export const injectLanguageSwitcher = (): void => {
-  const simpleModeContainer = document.getElementById(
-    'simple-mode-language-switcher'
-  );
+  // The simple-mode footer mounts a placeholder switcher before i18n is ready;
+  // replace it once translations are available so its labels are localized.
+  const simpleModeContainer =
+    document.getElementById('simple-mode-lang-switcher') ||
+    document.getElementById('simple-mode-language-switcher');
   if (simpleModeContainer) {
+    simpleModeContainer.innerHTML = '';
     const switcher = createLanguageSwitcher();
+    const menu = switcher.querySelector('div[role="menu"]');
+    if (menu) {
+      menu.classList.remove('mt-2');
+      menu.classList.add('bottom-full', 'mb-2');
+    }
     simpleModeContainer.appendChild(switcher);
     return;
   }

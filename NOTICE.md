@@ -20,19 +20,24 @@ published under **AGPL-3.0-only** in accordance with that license.
      deployment is honoured.
 
 2. Branding is applied through the project's own build-time variables:
-   `SIMPLE_MODE=true`, `SITE_URL=https://paperrail.pages.dev`,
+   `SIMPLE_MODE=true`, `SITE_URL=https://qdxil.qzz.io`,
    `VITE_BRAND_NAME=PaperRail`, `VITE_BRAND_LOGO=assets/brand/logo.svg`,
-   `VITE_FOOTER_TEXT=…`, `VITE_USE_CDN=true`, plus two PaperRail additions:
-   `VITE_LANGUAGES=en` and `VITE_ENABLE_SW` (unset = disabled).
+   `VITE_FOOTER_TEXT=…`, `VITE_USE_CDN=true`, plus one PaperRail addition:
+   `VITE_ENABLE_SW` (unset = disabled). All 24 upstream languages are enabled:
+   `scripts/generate-i18n-pages.mjs` generates the localized tool pages
+   (≈3.2k files) after `vite build`, and `VITE_LANGUAGES` stays unset.
 
 3. Runtime behaviour changes (small, surgical):
    - `src/js/main.ts` (SIMPLE_MODE block): the runtime `<title>` override now
      only fires when the document still carries a generic upstream title, so
      the per-tool SEO titles and the branded homepage title survive.
    - `src/js/i18n/i18n.ts`: supported languages can be restricted with
-     `VITE_LANGUAGES`. PaperRail ships English only, because localized landing
-     pages are not generated in this deployment; exposing the switcher without
-     those pages produced `/zh/...` 404 links.
+     `VITE_LANGUAGES`; PaperRail leaves it unset so all 24 languages are
+     listed, and generates the matching `/zh/…`, `/ja/…` pages at build time.
+   - `src/js/i18n/language-switcher.ts`: the simple-mode footer mounts a
+     switcher before i18n is ready, which printed "undefined" as the placeholder
+     and could not localize its labels. The switcher now falls back safely and
+     is re-created (localized) once translations are loaded.
    - `src/js/sw-register.ts` + `public/sw.js`: the service worker is disabled
      unless `VITE_ENABLE_SW=true`. The upstream cache-first worker pinned
      hashed bundles across releases (mixed old/new `main-*.js` after a deploy,
